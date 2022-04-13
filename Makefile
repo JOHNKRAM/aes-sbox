@@ -1,4 +1,5 @@
 FLAGS += -Ofast -march=native
+OMP_FLAGS += -fopenmp
 
 all: main
 
@@ -14,5 +15,11 @@ service.o: service.cpp aes.h service.h
 main.o: main.cpp aes.h service.h
 	g++ -c main.cpp -o main.o $(FLAGS)
 
+gen: gen.cpp
+	g++ gen.cpp -o gen $(FLAGS)
+
+sbox: sbox.cpp
+	g++ sbox.cpp -o sbox $(FLAGS) $(OMP_FLAGS)
+
 clean:
-	rm *.o main
+	rm *.o main gen sbox

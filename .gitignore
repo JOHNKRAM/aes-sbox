@@ -2,3 +2,6 @@
 *.o
 aes.txt
 main
+gen
+sbox
+sbox.out
