@@ -27,16 +27,27 @@ void AESServiceCFB::Enc(unsigned char* out,unsigned char* in,int len)
     for(int i=15;~i;i--)t=t<<8|iv[i];
     assert(len*8%r==0);
     memset(out,0,len);
-    for(int i=0;i<len<<3;i+=r)
+    if(r&7)for(int i=0;i<len<<3;i+=r)
+    {
+        for(int j=0;j<16;j++)target[j]=t>>(j<<3)&255;
+        aes.Enc(text,target);
+        t>>=r;
+        for(int j=0;j<r;j++)
+        {
+            out[i+j>>3]|=((in[i+j>>3]>>(i+j&7)^text[j>>3]>>(j&7))&1)<<(i+j&7);
+            t|=(__uint128_t)((in[i+j>>3]>>(i+j&7)^text[j>>3]>>(j&7))&1)<<(j+128-r);
+        }
+    }
+    else for(int i=0;i<len<<3;i+=r)
     {
         for(int j=0;j<16;j++)target[j]=t>>(j<<3)&255;
         aes.Enc(text,target);
         if(r<128)t>>=r;
         else t=0;
-        for(int j=0;j<r;j++)
+        for(int j=0;j<r;j+=8)
         {
-            out[i+j>>3]|=((in[i+j>>3]>>(i+j&7)^text[j>>3]>>(j&7))&1)<<(i+j&7);
-            t|=(__uint128_t)((in[i+j>>3]>>(i+j&7)^text[j>>3]>>(j&7))&1)<<(j+128-r);
+            out[i+j>>3]=in[i+j>>3]^text[j>>3];
+            t|=(__uint128_t)(in[i+j>>3]^text[j>>3])<<(j+128-r);
         }
     }
 }
@@ -47,16 +58,27 @@ void AESServiceCFB::Dec(unsigned char* out,unsigned char* in,int len)
     for(int i=15;~i;i--)t=t<<8|iv[i];
     assert(len*8%r==0);
     memset(out,0,len);
-    for(int i=0;i<len<<3;i+=r)
+    if(r&7)for(int i=0;i<len<<3;i+=r)
+    {
+        for(int j=0;j<16;j++)target[j]=t>>(j<<3)&255;
+        aes.Enc(text,target);
+        t>>=r;
+        for(int j=0;j<r;j++)
+        {
+            out[i+j>>3]|=((in[i+j>>3]>>(i+j&7)^text[j>>3]>>(j&7))&1)<<(i+j&7);
+            t|=(__uint128_t)(in[i+j>>3]>>(i+j&7)&1)<<(j+128-r);
+        }
+    }
+    else for(int i=0;i<len<<3;i+=r)
     {
         for(int j=0;j<16;j++)target[j]=t>>(j<<3)&255;
         aes.Enc(text,target);
         if(r<128)t>>=r;
         else t=0;
-        for(int j=0;j<r;j++)
+        for(int j=0;j<r;j+=8)
         {
-            out[i+j>>3]|=((in[i+j>>3]>>(i+j&7)^text[j>>3]>>(j&7))&1)<<(i+j&7);
-            t|=(__uint128_t)(in[i+j>>3]>>(i+j&7)&1)<<(j+128-r);
+            out[i+j>>3]=in[i+j>>3]^text[j>>3];
+            t|=(__uint128_t)(in[i+j>>3])<<(j+128-r);
         }
     }
 }
